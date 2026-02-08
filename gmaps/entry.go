@@ -55,6 +55,8 @@ type Review struct {
 	Description       string
 	Images            []string
 	When              string
+	ReviewId          string
+	ReviewUrl         string
 	OwnerResponse     string
 	OwnerResponseTime string
 }
@@ -509,6 +511,18 @@ func parseReviews(reviewsI []any) []Review {
 			}
 		}
 
+		// Extract Google's native review ID from el[0]
+		// Prefixes: Chd, ChZ (older reviews), Ci9 (newer reviews)
+		reviewId := ""
+		if len(el) > 0 {
+			if idStr, ok := el[0].(string); ok {
+				reviewId = idStr
+			}
+		}
+
+		// Extract direct review URL from el[4][3][0]
+		reviewUrl := getNthElementAndCast[string](el, 4, 3, 0)
+
 		// Extract owner response if present
 		// Owner response text is at [3][14][0][0], time at [3][3]
 		ownerResponse := getNthElementAndCast[string](el, 3, 14, 0, 0)
@@ -516,6 +530,8 @@ func parseReviews(reviewsI []any) []Review {
 
 		review := Review{
 			Name:           authorName,
+			ReviewId:       reviewId,
+			ReviewUrl:      reviewUrl,
 			ProfilePicture: profilePic,
 			When: func() string {
 				if len(time) < 3 {
